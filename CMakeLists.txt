@@ -9,7 +9,7 @@
 #  compile, using preprocessor checks for platform-specific bits instead of
 #  testing in here.
 
-cmake_minimum_required(VERSION 2.8.4)
+cmake_minimum_required(VERSION 3.0.2)
 
 project(PhysicsFS)
 set(PHYSFS_VERSION 3.1.0)
@@ -22,7 +22,7 @@ if(WIN32 AND NOT WINDOWS)
     set(WINDOWS TRUE)
 endif()
 
-include_directories(./src)
+#include_directories(./src)
 
 if(APPLE)
     set(OTHER_LDFLAGS ${OTHER_LDFLAGS} "-framework IOKit -framework Foundation")
@@ -88,6 +88,14 @@ set(PHYSFS_SRCS
     src/physfs_archiver_slb.c
     src/physfs_archiver_iso9660.c
     src/physfs_archiver_vdf.c
+
+    src/physfs.h
+    src/physfs_casefolding.h
+    src/physfs_platforms.h
+    src/physfs_internal.h
+    src/physfs_lzmasdk.h
+    src/physfs_miniz.h
+
     ${PHYSFS_CPP_SRCS}
     ${PHYSFS_M_SRCS}
 )
@@ -164,6 +172,8 @@ if(PHYSFS_BUILD_STATIC)
         set_target_properties(physfs-static PROPERTIES STATIC_LIBRARY_FLAGS "/ignore:4264")
     endif()
 
+	target_include_directories(physfs-static PUBLIC "./src")
+
     set(PHYSFS_LIB_TARGET physfs-static)
     set(PHYSFS_INSTALL_TARGETS ${PHYSFS_INSTALL_TARGETS} ";physfs-static")
 endif()
@@ -177,7 +187,11 @@ if(PHYSFS_BUILD_SHARED)
     if(WINRT)
 		set_target_properties(physfs PROPERTIES VS_WINRT_COMPONENT True)
     endif()
+
+	target_include_directories(physfs PUBLIC "./src")
+
     target_link_libraries(physfs ${OPTIONAL_LIBRARY_LIBS} ${OTHER_LDFLAGS})
+
     set(PHYSFS_LIB_TARGET physfs)
     set(PHYSFS_INSTALL_TARGETS ${PHYSFS_INSTALL_TARGETS} ";physfs")
 endif()
@@ -192,7 +206,7 @@ if(PHYSFS_BUILD_SHARED AND PHYSFS_BUILD_STATIC AND NOT WINDOWS)
     set_target_properties(physfs-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 endif()
 
-option(PHYSFS_BUILD_TEST "Build stdio test program." TRUE)
+option(PHYSFS_BUILD_TEST "Build stdio test program." OFF)
 mark_as_advanced(PHYSFS_BUILD_TEST)
 if(PHYSFS_BUILD_TEST)
     find_path(READLINE_H readline/readline.h)
@@ -242,33 +256,33 @@ else()
     message(STATUS "Doxygen not found. You won't be able to build documentation.")
 endif()
 
-if(UNIX)
-    set(PHYSFS_TARBALL "${CMAKE_CURRENT_SOURCE_DIR}/../physfs-${PHYSFS_VERSION}.tar.bz2")
-    add_custom_target(
-        dist
-        hg archive -t tbz2 "${PHYSFS_TARBALL}"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        COMMENT "Building source tarball '${PHYSFS_TARBALL}'..."
-    )
-    add_custom_target(
-        uninstall
-        "${CMAKE_CURRENT_SOURCE_DIR}/extras/uninstall.sh"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-        COMMENT "Uninstall the project..."
-    )
-endif()
+#if(UNIX)
+    #set(PHYSFS_TARBALL "${CMAKE_CURRENT_SOURCE_DIR}/../physfs-${PHYSFS_VERSION}.tar.bz2")
+    #add_custom_target(
+        #dist
+        #hg archive -t tbz2 "${PHYSFS_TARBALL}"
+        #WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        #COMMENT "Building source tarball '${PHYSFS_TARBALL}'..."
+    #)
+    #add_custom_target(
+        #uninstall
+        #"${CMAKE_CURRENT_SOURCE_DIR}/extras/uninstall.sh"
+        #WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+        #COMMENT "Uninstall the project..."
+    #)
+#endif()
 
-if(NOT MSVC)
-    configure_file(
-        "extras/physfs.pc.in"
-        "extras/physfs.pc"
-        @ONLY
-    )
-    install(
-        FILES "${CMAKE_CURRENT_BINARY_DIR}/extras/physfs.pc"
-        DESTINATION "lib${LIB_SUFFIX}/pkgconfig"
-    )
-endif()
+#if(NOT MSVC)
+    #configure_file(
+        #"extras/physfs.pc.in"
+        #"extras/physfs.pc"
+        #@ONLY
+    #)
+    #install(
+        #FILES "${CMAKE_CURRENT_BINARY_DIR}/extras/physfs.pc"
+        #DESTINATION "lib${LIB_SUFFIX}/pkgconfig"
+    #)
+#endif()
 
 macro(message_bool_option _NAME _VALUE)
     if(${_VALUE})
